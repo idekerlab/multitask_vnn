@@ -19,58 +19,40 @@ class RLIPPCalculator():
 	def __init__(self, args):
 		self.ontology = pd.read_csv(args.ontology, sep='\t', header=None, names=['S', 'T', 'I'], dtype={0:str, 1:str, 2:str})
 		self.terms = self.ontology['S'].unique().tolist()
-		self.test_df = pd.read_csv(args.test, sep='\t', header=None, names=['C', 'D', 'AUC', 'DS'])
-		self.predicted_vals = np.loadtxt(args.predicted)
+		self.test_df = self.replace_auc(args.test, args.predicted)
 		self.genes = pd.read_csv(args.gene2idfile, sep='\t', header=None, names=['I', 'G'])['G']
 		self.cell_index = pd.read_csv(args.cell2idfile, sep="\t", header=None, names=['I', 'C'])
 		self.rlipp_file = args.sys_output
 		self.gene_rho_file = args.gene_output
 		self.cpu_count = args.cpu_count
-		self.num_hiddens_genotype = args.genotype_hiddens
 
 		self.hidden_dir = args.hidden
 		if not self.hidden_dir.endswith('/'):
 			self.hidden_dir += '/'
 
-		self.drugs = list(set(self.test_df['D']))
-		self.drug_count = args.drug_count
-		if self.drug_count == 0:
-			self.drug_count = len(self.drugs)
 
-
-	#Create a map of a list of the position of a drug in the test file
-	def create_drug_pos_map(self):
-		drug_pos_map = {d:[] for d in self.drugs}
-		for i, row in self.test_df.iterrows():
-			drug_pos_map[row['D']].append(i)
-		return drug_pos_map
-
-
-	# Create a sorted map of spearman correlation values for every drug
-	def create_drug_corr_map_sorted(self, drug_pos_map):
-		drug_corr_map = {}
-		for d in self.drugs:
-			if len(drug_pos_map[d]) == 0:
-				drug_corr_map[d] = 0.0
-				continue
-			test_vals = np.take(np.array(self.test_df['AUC']), drug_pos_map[d])
-			pred_vals = np.take(self.predicted_vals, drug_pos_map[d])
-			drug_corr_map[d] = stats.spearmanr(test_vals, pred_vals)[0]
-		return {drug:corr for drug,corr in sorted(drug_corr_map.items(), key=lambda item:item[1], reverse=True)}
+	def replace_auc(self, test_file, predict_file):
+		test_df = pd.read_csv(test_file, sep='\t')
+		predicted_vals = np.loadtxt(predict_file)
+		drug_list = list(test_df.columns)
+		drug_list.remove('cell_line')
+		for i,d in enumerate(drug_list):
+			test_df[d] = predicted_vals[:,i]
+		return test_df
 
 
 	#Load the hidden file for a given element
-	def load_feature(self, element, size):
+	def load_feature(self, element):
 		file_name = self.hidden_dir + element + '.hidden'
-		return np.loadtxt(file_name, usecols=range(size))
+		return np.loadtxt(file_name)
 
 
 	def load_term_features(self, term):
-		return self.load_feature(term, self.num_hiddens_genotype)
+		return self.load_feature(term)
 
 
 	def load_gene_features(self, gene):
-		return self.load_feature(gene, 1)
+		return self.load_feature(gene)
 
 
 	def create_child_feature_map(self, feature_map, term):
@@ -104,18 +86,18 @@ class RLIPPCalculator():
 
 
 	#Get a hidden feature matrix of a given term's children
-	def get_child_features(self, term_child_features, position_map):
+	def get_child_features(self, term_child_features):
 		child_features = []
 		for f in term_child_features:
-			child_features.append(np.take(f, position_map, axis=0))
+			child_features.append(f)
 		return np.column_stack([f for f in child_features])
 
 
 	#Executes 5-fold cross validated Ridge regression for a given hidden features matrix
 	#and returns the spearman correlation value of the predicted output
-	def exec_lm(self, X, y):
+	def exec_lm(self, X, y, pca_dim):
 
-		pca = PCA(n_components=self.num_hiddens_genotype)
+		pca = PCA(n_components=pca_dim)
 		X_pca = pca.fit_transform(X)
 
 		regr = RidgeCV(cv=5)
@@ -124,25 +106,25 @@ class RLIPPCalculator():
 		return stats.spearmanr(y_pred, y)
 
 
-	# Calculates RLIPP for a given term and drug
+	# Calculates RLIPP for a given term
 	#Executes parallely
-	def calc_term_rlipp(self, term_features, term_child_features, position_map, term, drug):
-		X_parent = np.take(term_features, position_map, axis=0)
-		X_child = self.get_child_features(term_child_features, position_map)
-		y = np.take(self.predicted_vals, position_map)
-		p_rho, p_pval = self.exec_lm(X_parent, y)
-		c_rho, c_pval = self.exec_lm(X_child, y)
+	def calc_term_rlipp(self, term_features, term_child_features, term, drug):
+		pca_dim = np.size(term_features, axis=1)
+		X_parent = term_features
+		X_child = self.get_child_features(term_child_features)
+		y = np.array(self.test_df[drug])
+		p_rho,_ = self.exec_lm(X_parent, y, pca_dim)
+		c_rho,_ = self.exec_lm(X_child, y, pca_dim)
 		rlipp = p_rho/c_rho
-		result = '{}\t{:.3e}\t{:.3e}\t{:.3e}\t{:.3e}\t{:.3e}\n'.format(term, p_rho, p_pval, c_rho, c_pval, rlipp)
+		result = '{}\t{}\t{:.4f}\t{:.4f}\t{:.4f}\n'.format(drug, term, p_rho, c_rho, rlipp)
 		return result
 
 
 	#Calculates Spearman correlation between Gene embeddings and Predicted AUC
-	def calc_gene_rho(self, gene_features, position_map, gene, drug):
-		pred = np.take(self.predicted_vals, position_map)
-		gene_embeddings = np.take(gene_features, position_map)
-		rho, p_val = stats.spearmanr(pred, gene_embeddings)
-		result = '{}\t{:.3e}\t{:.3e}\n'.format(gene, rho, p_val)
+	def calc_gene_rho(self, gene_features, gene, drug):
+		pred = np.array(self.test_df[drug])
+		rho,_ = stats.spearmanr(pred, gene_features)
+		result = '{}\t{}\t{:.4f}\n'.format(drug, gene, rho)
 		return result
 
 
@@ -151,27 +133,27 @@ class RLIPPCalculator():
 	def calc_scores(self):
 		print('Starting score calculation')
 
-		drug_pos_map = self.create_drug_pos_map()
-		sorted_drugs = list(self.create_drug_corr_map_sorted(drug_pos_map).keys())[0:self.drug_count]
-
 		start = time.time()
 		feature_map, child_feature_map = self.load_all_features()
 		print('Time taken to load features: {:.4f}'.format(time.time() - start))
 
+		drug_list = list(self.test_df.columns)
+		drug_list.remove('cell_line')
+
 		rlipp_file = open(self.rlipp_file, "w")
-		rlipp_file.write('Term\tP_rho\tP_pval\tC_rho\tC_pval\tRLIPP\n')
+		rlipp_file.write('Drug\tTerm\tP_rho\tC_rho\tRLIPP\n')
 		gene_rho_file = open(self.gene_rho_file, "w")
-		gene_rho_file.write('Gene\tRho\tP_val\n')
+		gene_rho_file.write('Drug\tGene\tRho\n')
 
 		with Parallel(backend="multiprocessing", n_jobs=self.cpu_count) as parallel:
-			for i, drug in enumerate(sorted_drugs):
+			for i, drug in enumerate(drug_list):
 				start = time.time()
 
-				rlipp_results = parallel(delayed(self.calc_term_rlipp)(feature_map[term], child_feature_map[term], drug_pos_map[drug], term, drug) for term in self.terms)
+				rlipp_results = parallel(delayed(self.calc_term_rlipp)(feature_map[term], child_feature_map[term], term, drug) for term in self.terms)
 				for result in rlipp_results:
 					rlipp_file.write(result)
 
-				gene_rho_results = parallel(delayed(self.calc_gene_rho)(feature_map[gene], drug_pos_map[drug], gene, drug) for gene in self.genes)
+				gene_rho_results = parallel(delayed(self.calc_gene_rho)(feature_map[gene], gene, drug) for gene in self.genes)
 				for result in gene_rho_results:
 					gene_rho_file.write(result)
 

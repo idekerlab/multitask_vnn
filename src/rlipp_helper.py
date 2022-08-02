@@ -14,8 +14,6 @@ def main():
 	parser.add_argument('-sys_output', help = 'RLIPP file', type = str)
 	parser.add_argument('-gene_output', help = 'Gene rho file', type = str)
 	parser.add_argument('-cpu_count', help = 'No of available cores', type = int, default = 1)
-	parser.add_argument('-drug_count', help = 'No of top performing drugs', type = int, default = 0)
-	parser.add_argument('-genotype_hiddens', help = 'Mapping for the number of neurons in each term in genotype parts', type = int, default = 4)
 
 	cmd_args = parser.parse_args()
 

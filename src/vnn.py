@@ -5,10 +5,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from training_data_wrapper import *
+from data_wrapper import *
 
 
-class DrugCellNN(nn.Module):
+class VNN(nn.Module):
 
 	def __init__(self, data_wrapper):
 
@@ -36,11 +36,11 @@ class DrugCellNN(nn.Module):
 
 		# add modules for neural networks to process genotypes
 		self.contruct_direct_gene_layer()
-		self.construct_NN_graph(copy.deepcopy(data_wrapper.dG))
+		self.construct_NN_graph(copy.deepcopy(data_wrapper.dG), data_wrapper.task_len)
 
 		# add module for final layer
-		self.add_module('final_aux_linear_layer', nn.Linear(data_wrapper.num_hiddens_genotype, 1))
-		self.add_module('final_linear_layer_output', nn.Linear(1, 1))
+		self.add_module('final_aux_linear_layer', nn.Linear(data_wrapper.num_hiddens_genotype, data_wrapper.task_len))
+		self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.task_len, data_wrapper.task_len))
 
 
 	# calculate the number of values in a state (term)
@@ -74,7 +74,7 @@ class DrugCellNN(nn.Module):
 
 	# start from bottom (leaves), and start building a neural network using the given ontology
 	# adding modules --- the modules are not connected yet
-	def construct_NN_graph(self, dG):
+	def construct_NN_graph(self, dG, task_len):
 
 		self.term_layer_list = []   # term_layer_list stores the built neural network
 		self.term_neighbor_map = {}
@@ -112,8 +112,8 @@ class DrugCellNN(nn.Module):
 					self.add_module(term+'_dropout_layer', nn.Dropout(p = self.dropout_fraction))
 				self.add_module(term+'_linear_layer', nn.Linear(input_size, term_hidden))
 				self.add_module(term+'_batchnorm_layer', nn.BatchNorm1d(term_hidden))
-				self.add_module(term+'_aux_linear_layer1', nn.Linear(term_hidden, 1))
-				self.add_module(term+'_aux_linear_layer2', nn.Linear(1, 1))
+				self.add_module(term+'_aux_linear_layer1', nn.Linear(term_hidden, task_len))
+				self.add_module(term+'_aux_linear_layer2', nn.Linear(task_len, task_len))
 
 			i += 1
 			dG.remove_nodes_from(leaves)
@@ -163,21 +163,3 @@ class DrugCellNN(nn.Module):
 		aux_out_map['final'] = self._modules['final_linear_layer_output'](aux_layer_out)
 
 		return aux_out_map, hidden_embeddings_map
-
-
-	# Unused and not working as expected
-	def get_gene_weights(self, weight_type='direct_gene_layer.weight'):
-		term_weights_map = {}
-		for name, param in self.named_parameters():
-			if weight_type not in name:
-				continue
-			term = name.split('_')[0]
-			if term not in self.term_direct_gene_map.keys():
-				continue
-			print(term, param.shape)
-			if len(self.term_direct_gene_map[term]) == param.shape[1]:
-				term_weights_map[term] = param.data.cpu().numpy().T
-			else:
-				ngenes = len(self.term_direct_gene_map[term])
-				term_weights_map[term] = param.data.cpu().numpy().T[0:ngenes]
-		return term_weights_map

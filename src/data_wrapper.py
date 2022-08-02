@@ -7,7 +7,7 @@ import networkx.algorithms.dag as nxadag
 import util
 
 
-class TrainingDataWrapper():
+class DataWrapper():
 
 	def __init__(self, args):
 
@@ -22,8 +22,6 @@ class TrainingDataWrapper():
 		self.modeldir = args.modeldir
 		self.cuda = args.cuda
 		self.train = args.train
-		self.zscore_method = args.zscore_method
-		self.std = args.std
 		self.patience = args.patience
 		self.delta = args.delta
 		self.min_dropout_layer = args.min_dropout_layer
@@ -35,11 +33,9 @@ class TrainingDataWrapper():
 		self.cn_amplifications = np.genfromtxt(args.cn_amplifications, delimiter = ',')
 		self.cell_features = np.dstack([self.mutations, self.cn_deletions, self.cn_amplifications])
 
-		self.train_feature, self.train_label, self.val_feature, self.val_label = self.prepare_train_data()
+		self.tasks = util.read_file(args.tasks)
+		self.task_len = len(self.tasks)
 
-
-	def prepare_train_data(self):
-		return util.prepare_train_data(self.train, self.cell_id_mapping, self.zscore_method, self.std)
 
 	def load_ontology(self, file_name):
 
