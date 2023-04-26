@@ -31,15 +31,14 @@ class OptunaNNTrainer(VNNTrainer):
 		#study = optuna.create_study(sampler=GridSampler(search_space), direction="minimize")
 		#study.optimize(self.run_trials, n_trials=8)
 		study = optuna.create_study(direction="minimize")
-		study.optimize(self.run_trials, n_trials=30)
+		study.optimize(self.run_trials, n_trials=6)
 		return self.print_result(study, best_hyperparams_file)
 
 
 	def setup_trials(self, trial):
 
 		self.data_wrapper.genotype_hiddens = trial.suggest_categorical("genotype_hiddens", [4, 8, 12])
-		self.data_wrapper.lr = trial.suggest_categorical("lr", [1e-4, 1.2e-4, 1.5e-4, 2e-4, 4e-4, 5e-4])
-		self.data_wrapper.dropout_fraction = trial.suggest_categorical("dropout_fraction", [0.3, 0.5])
+		self.data_wrapper.lr = trial.suggest_categorical("lr", [2e-4, 5e-4])
 
 		batch_size = self.data_wrapper.batchsize
 		if batch_size > len(self.train_feature)/4:
@@ -199,11 +198,11 @@ class OptunaNNTrainer(VNNTrainer):
 		best_params = {}
 		print("Params:")
 		for key, value in best_trial.params.items():
-			out_file.write("{}\t{}".format(key, value))
+			out_file.write("{}\t{}\n".format(key, value))
 			print("{}\t{}".format(key, value))
 			best_params[key] = value
 		for key, value in best_trial.user_attrs.items():
-			out_file.write("{}\t{}".format(key, value))
+			out_file.write("{}\t{}\n".format(key, value))
 			print("{}\t{}".format(key, value))
 			best_params[key] = value
 		out_file.close()

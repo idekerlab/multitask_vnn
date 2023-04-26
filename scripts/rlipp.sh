@@ -6,7 +6,7 @@ ontology="${homedir}/data/training_files_${3}/ontology_${2}_${3}.txt"
 gene2idfile="${homedir}/data/training_files_${3}/gene2ind_${2}_${3}.txt"
 cell2idfile="${homedir}/data/training_files_${3}/cell2ind_${3}.txt"
 
-modeldir="${homedir}/models/model_${2}_${3}_${4}_${5}"
+modeldir="${homedir}/models/control/model_${2}_${3}_${4}_${5}"
 test="${modeldir}/test.txt"
 
 predicted="${modeldir}/predict.txt"

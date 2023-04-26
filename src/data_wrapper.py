@@ -73,7 +73,7 @@ class DataWrapper():
 			else:
 				term_size_map[term] = len(term_gene_set)
 
-		roots = [n for n in dG.nodes if dG.in_degree(n) == 0]
+		roots = [n for n in dG.nodes() if dG.in_degree(n) == 0]
 
 		uG = dG.to_undirected()
 		connected_subG_list = list(nxacc.connected_components(uG))

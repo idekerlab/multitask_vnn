@@ -37,7 +37,7 @@ class RLIPPCalculator():
 		drug_list = list(test_df.columns)
 		drug_list.remove('cell_line')
 		for i,d in enumerate(drug_list):
-			test_df[d] = predicted_vals[:,i]
+			test_df[d] = np.where(test_df[d].notna(), predicted_vals[:,i], np.nan)
 		return test_df
 
 
@@ -110,9 +110,12 @@ class RLIPPCalculator():
 	#Executes parallely
 	def calc_term_rlipp(self, term_features, term_child_features, term, drug):
 		pca_dim = np.size(term_features, axis=1)
-		X_parent = term_features
-		X_child = self.get_child_features(term_child_features)
 		y = np.array(self.test_df[drug])
+		mask = np.isnan(y)
+		y = y[~mask]
+		X_parent = term_features[~mask,:]
+
+		X_child = self.get_child_features(term_child_features)[~mask,:]
 		p_rho,_ = self.exec_lm(X_parent, y, pca_dim)
 		c_rho,_ = self.exec_lm(X_child, y, pca_dim)
 		rlipp = p_rho/c_rho

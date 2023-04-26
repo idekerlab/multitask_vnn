@@ -6,11 +6,14 @@ dataset="av"
 
 folds=5
 
-for ont in "ctg"
+ont="ctg"
+
+ctrl_count=83
+for ((d=0;d<=ctrl_count;d++));
 do
-	for drug in "RS"
+	for drug in "RS_${d}"
 	do
-		#bash "${homedir}/scripts/create_input.sh" $homedir $ont $dataset $drug $folds
+		bash "${homedir}/scripts/create_input.sh" $homedir $ont $dataset $drug $folds
 		
 		for ((i=1;i<=folds;i++));
 		do

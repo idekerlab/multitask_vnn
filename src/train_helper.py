@@ -52,7 +52,7 @@ def main():
 	else:
 		if exists(opt.tuned_hyperparams):
 			with open(opt.tuned_hyperparams, 'r') as f:
-				key, value = f.read().strip().split()
+				key, value = f.readline().strip().split()
 				vnn_trainer.update_data_wrapper(key, value)
 	vnn_trainer.train_model()
 	
