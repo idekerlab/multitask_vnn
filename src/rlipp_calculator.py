@@ -126,6 +126,9 @@ class RLIPPCalculator():
 	#Calculates Spearman correlation between Gene embeddings and Predicted AUC
 	def calc_gene_rho(self, gene_features, gene, drug):
 		pred = np.array(self.test_df[drug])
+		mask = np.isnan(pred)
+		pred = pred[~mask]
+		gene_features = gene_features[~mask]
 		rho,_ = stats.spearmanr(pred, gene_features)
 		result = '{}\t{}\t{:.4f}\n'.format(drug, gene, rho)
 		return result
