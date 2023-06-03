@@ -6,27 +6,25 @@ gene2idfile="${homedir}/sample/gene2ind.txt"
 cell2idfile="${homedir}/sample/cell2ind.txt"
 ontfile="${homedir}/sample/ontology.txt"
 mutationfile="${homedir}/sample/cell2mutation.txt"
+cn_deletionfile="${homedir}/samplecell2cndeletion.txt"
+cn_amplificationfile="${homedir}/sample/cell2cnamplification.txt"
 traindatafile="${homedir}/sample/training_data.txt"
+taskfile="${homedir}/sample/task_list_RS.txt"
 
-modeldir="${homedir}/sample/model"
+modeldir="${homedir}/model"
 if [ -d $modeldir ]
 then
 	rm -rf $modeldir
 fi
 mkdir -p $modeldir
 
-stdfile="${modeldir}/std.txt"
-resultfile="${modeldir}/predict"
-
-zscore_method="auc"
-
 cudaid=0
 
-pyScript="${homedir}/src/train.py"
+pyScript="${homedir}/src/train_helper.py"
 
 source activate cuda11_env
 
-python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
-	-train $traindatafile -genotype $mutationfile -std $stdfile -model $modeldir \
-	-genotype_hiddens 6 -lr 0.0001 -wd 0.0001 -alpha 0.3 -cuda $cudaid -epoch 300 \
-	-batchsize 64 -optimize 1 -zscore_method $zscore_method > "${modeldir}/train.log"
+python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile -train $traindatafile \
+	-mutations $mutationfile -cn_deletions $cn_deletionfile -cn_amplifications $cn_amplificationfile \
+	-tasks $taskfile -model $modeldir -genotype_hiddens 12 -lr 0.0002 -epoch 300 \
+	-batchsize 64 -optimize 1 -cuda $cudaid > "${modeldir}/train.log"

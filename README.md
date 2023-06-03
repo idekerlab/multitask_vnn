@@ -1,19 +1,17 @@
-# DCoDR: a visible neural network model for drug response prediction
-DCoDR is an interpretable neural network-based model that predicts
-cell response to a drug. the first explainable data-driven method 
-for cancer therapeutic response prediction, in which cell structure 
-is modeled using a hierarchical map of tumor cell systems.
+# Multitask-VNN: a visible neural network multi-task learning model for drug response prediction
+Multitask-VNN is an interpretable neural network-based model that predicts
+cell response to a set of drugs with similar function.
 This framework integrates information across multiple levels of 
 cancer cell biology to understand drug response, and can serve 
 to identify and explain biomarkers for clinical application.
 
-DCoDR characterizes each cell line using its genotype;
+Multitask-VNN characterizes each cell line using its genotype;
 the feature vector for each cell is a binary vector representing
 mutational status and copy number variations of the genes 
 used in clinical panels like Foundation Medicine (n=718).
 
-# Environment set up for training and testing of DCoDR
-DCoDR training/testing scripts require the following environmental setup:
+# Environment set up for training and testing
+The model training/testing scripts require the following environmental setup:
 
 * Hardware required for training a new model
     * GPU server with CUDA>=11 installed
@@ -24,7 +22,7 @@ DCoDR training/testing scripts require the following environmental setup:
         * Relevant information for installing Anaconda can be found in: 
         https://docs.conda.io/projects/conda/en/latest/user-guide/install/.
     * PyTorch
-        * The current release of DCoDR was trained/tested using PyTorch 1.8.0
+        * The current release of this model was trained/tested using PyTorch 1.8.0
         * Depending on the specification of your machine, run appropriate command to install PyTorch.
         The installation command line can be found in https://pytorch.org/.
         * For a **LINUX-based GPU server** with **CUDA version 11.1**, run the following command line:
@@ -56,8 +54,7 @@ Required input files:
 
 2. Test data file: _test_data.txt_
     * A tab-delimited file containing all data points that you want to estimate drug response for.
-    The 1st column is identification of cells (genotypes) and the 2nd column is identification of
-    drugs.
+    The 1st column contains cell IDs and rest of the columns contain drug response AUC.
 
 To load a pre-trained model used for analyses in our manuscript 
 and make prediction for the cell lines of your interest, 
@@ -78,15 +75,14 @@ _sample_ folder)
                         -hidden <path_to_directory_to_store_hidden_values>
                         -result <path_to_directory_to_store_prediction_results>
                         -load <path_to_model_file>
-                        -std <path to standarization file (present with the model)>
                         -cuda <GPU_unit_to_use>
                         -batchsize 2000 (or any other value)
     ```
     * An example bash script (_test.sh_) is provided in _sample_ folder.
 
 
-# Train a new DCoDR model
-To train a new DCoDR model using a custom data set, first make sure that you have
+# Train a new model
+To train a new model using a custom data set, first make sure that you have
 a proper virtual environment set up. Also make sure that you have all the required files
 to run the training scripts:
 
@@ -103,20 +99,21 @@ to run the training scripts:
     * _cell2amplification.txt_: a comma-delimited file where each row has 718 binary values
          indicating copy number amplification (1) (0 for not).
 
-2. Training data file: _training_data.txt_
+2. Training data file: _train_data.txt_
     * A tab-delimited file containing all data points that you want to use to train the model.
-    The 1st column is identification of cells (genotypes), the 2nd column is a placeholder 
-    for drug id and the 3rd column is an observed drug response in a floating point number.
+    The 1st column contains cell IDs and rest of the columns contain drug response AUC.
+    * To help create train data from a pan-drug file, a python script "create_train_data.py"
+    can be executed. To execute it, please refer to "scripts/create_input.sh" bash script.
 
 3. Ontology (hierarchy) file: _ontology.txt_
     * A tab-delimited file that contains the ontology (hierarchy) that defines the structure of a branch
-    of a DCoDR model that encodes the genotypes. The first column is always a term (subsystem or pathway),
+    of a VNN that encodes the genotypes. The first column is always a term (assembly),
     and the second column is a term or a gene.
     The third column should be set to "default" when the line represents a link between terms,
     "gene" when the line represents an annotation link between a term and a gene.
     The following is an example describing a sample hierarchy.
 
-        ![](https://github.com/idekerlab/DrugCell/blob/master/misc/drugcell_ont_image_sample.png)
+        ![](https://github.com/idekerlab/multitask_vnn/samples/ontology_image_sample.png)
 
     ```
      GO:0045834	GO:0045923	default
@@ -137,7 +134,7 @@ There are several optional parameters that you can provide in addition to the in
 is set to "MODEL" in the current working directory.
 
 2. _-genotype_hiddens_: a number of neurons to assign each subsystem in the hierarchy.
-The default is set to 6.
+The default is set to 12.
 
 3. _-epoch_: the number of epoch to run during the training phase. The default is set to 300.
 
@@ -152,9 +149,9 @@ of your GPU server.
 7. _-cuda_: the ID of GPU unit that you want to use for the model training. The default setting
 is to use GPU 0.
 
-* All the parameters are mentioned in the src/train.py file.
+* All the parameters are mentioned in the src/train_helper.py file.
 
-Finally, to train a DCoDR model, execute a command line similar to the example provided in
+Finally, to train a multitask-VNN, execute a command line similar to the example provided in
 _sample/train.sh_:
 
 ```
@@ -164,9 +161,10 @@ python -u train.py  -onto ontology.txt
                     -genotype cell2mutation.txt
                     -cn_deletions cell2cndeletion.txt
                     -cn_amplifications cell2amplification.txt
-                    -train train.txt
+                    -tasks task_list_RS.txt
+                    -train train_data.txt
                     -modeldir sample/model
-                    -genotype_hiddens 6
+                    -genotype_hiddens 12
                     -epoch 100
                     -batchsize 64
                     -cuda 0

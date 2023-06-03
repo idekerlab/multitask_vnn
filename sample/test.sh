@@ -10,8 +10,6 @@ testdatafile="${homedir}/sample/test_data.txt"
 modeldir="${homedir}/sample/model"
 modelfile="${modeldir}/model_final.pt"
 
-stdfile="${modeldir}/std.txt"
-
 resultfile="${modeldir}/predict"
 
 hiddendir="${modeldir}/hidden"
@@ -21,14 +19,12 @@ then
 fi
 mkdir -p $hiddendir
 
-zscore_method="auc"
-
 cudaid=0
 
-pyScript="${homedir}/src/predict.py"
+pyScript="${homedir}/src/test_vnn.py"
 
 source activate cuda11_env
 
 python -u $pyScript -gene2id $gene2idfile -cell2id $cell2idfile \
-	-genotype $mutationfile -std $stdfile -hidden $hiddendir -result $resultfile \
-	-batchsize 2000 -predict $testdatafile -zscore_method $zscore_method -load $modelfile -cuda $cudaid > "${modeldir}/test.log"
+	-genotype $mutationfile -hidden $hiddendir -result $resultfile \
+	-batchsize 2000 -predict $testdatafile -load $modelfile -cuda $cudaid > "${modeldir}/test.log"

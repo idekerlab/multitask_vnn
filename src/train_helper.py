@@ -31,7 +31,7 @@ def main():
 	parser.add_argument('-cn_deletions', help = 'Copy number deletions for cell lines', type = str)
 	parser.add_argument('-cn_amplifications', help = 'Copy number amplifications for cell lines', type = str)
 	parser.add_argument('-optimize', help = 'Training option (0=optimize)', type = int, default = 1)
-	parser.add_argument('-tuned_hyperparams', help = 'Tuned hyperparameter file', type = str)
+	parser.add_argument('-tuned_hyperparams', help = 'Tuned hyperparameter file', type = str, default = '')
 	parser.add_argument('-patience', help = 'Early stopping epoch limit', type = int, default = 30)
 	parser.add_argument('-delta', help = 'Minimum change in loss to be considered an improvement', type = float, default = 0.001)
 	parser.add_argument('-min_dropout_layer', help = 'Start dropout from this Layer number', type = int, default = 2)
