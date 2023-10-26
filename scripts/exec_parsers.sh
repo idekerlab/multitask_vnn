@@ -1,6 +1,6 @@
 #!/bin/bash
 
-homedir="/cellar/users/asinghal/Workspace/dcodr"
+homedir=""  # homedir
 
 #Drugs
 

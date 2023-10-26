@@ -1,12 +1,14 @@
 #!/bin/bash
 
-homedir="/cellar/users/asinghal/Workspace/multitask_vnn"
+homedir="" # homedir
 
 dataset="av"
 
 folds=5
 
 ont="ctg"
+
+ct_data=""
 
 for drug in "RS"
 do
@@ -15,7 +17,7 @@ do
 		
 	for ((i=1;i<=folds;i++));
 	do
-		#sbatch -J "MTL_VNN_${ont}_${drug}_${i}" -o "${homedir}/logs/out_${ont}_${drug}_${i}.log" ${homedir}/scripts/cv_slurm.sh $homedir $ont $dataset $drug $i
-		sbatch -J "MTL_VNN_${ont}_${drug}_${i}" -o "${homedir}/logs/rlipp_${ont}_${drug}_${i}.log" ${homedir}/scripts/rlipp_slurm.sh $homedir $ont $dataset $drug $i
+		#sbatch -J "MTL_VNN_${ont}_${drug}_${i}" -o "${homedir}/logs/out_${ont}_${drug}_${i}.log" ${homedir}/scripts/cv_slurm.sh "$homedir" "$ont" "$dataset" "$drug" "$i" "$ct_data"
+		sbatch -J "MTL_VNN_${ont}_${drug}_${i}" -o "${homedir}/logs/rlipp_${ont}_${drug}_${i}.log" ${homedir}/scripts/rlipp_slurm.sh "$homedir" "$ont" "$dataset" "$drug" "$i" "$ct_data"
 	done
 done

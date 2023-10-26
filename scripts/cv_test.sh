@@ -7,13 +7,20 @@ mutationfile="${homedir}/data/training_files_${3}/cell2mutation_${2}_${3}.txt"
 cn_deletionfile="${homedir}/data/training_files_${3}/cell2cndeletion_${2}_${3}.txt"
 cn_amplificationfile="${homedir}/data/training_files_${3}/cell2cnamplification_${2}_${3}.txt"
 
-modeldir="${homedir}/models/control/model_${2}_${3}_${4}_${5}"
+modeldir="${homedir}/models/Final/model_${2}_${3}_${4}_${5}"
 modelfile="${modeldir}/model_final.pt"
+
 testdatafile="${modeldir}/test.txt"
-
 resultfile="${modeldir}/predict"
-
 hiddendir="${modeldir}/hidden"
+
+if [ $6 != "" ]
+then
+	testdatafile="${modeldir}/${6}.txt"
+	resultfile="${modeldir}/predict_${6}"
+	hiddendir="${modeldir}/hidden_${6}"
+fi
+
 if [ -d $hiddendir ]
 then
 	rm -rf $hiddendir

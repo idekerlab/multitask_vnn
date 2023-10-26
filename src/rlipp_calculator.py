@@ -6,6 +6,7 @@ from scipy import stats
 from multiprocessing import Pool
 from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import RidgeCV
 
 import warnings
@@ -19,7 +20,6 @@ class RLIPPCalculator():
 	def __init__(self, args):
 		self.ontology = pd.read_csv(args.ontology, sep='\t', header=None, names=['S', 'T', 'I'], dtype={0:str, 1:str, 2:str})
 		self.terms = self.ontology['S'].unique().tolist()
-		self.test_df = self.replace_auc(args.test, args.predicted)
 		self.genes = pd.read_csv(args.gene2idfile, sep='\t', header=None, names=['I', 'G'])['G']
 		self.cell_index = pd.read_csv(args.cell2idfile, sep="\t", header=None, names=['I', 'C'])
 		self.rlipp_file = args.sys_output
@@ -30,6 +30,9 @@ class RLIPPCalculator():
 		if not self.hidden_dir.endswith('/'):
 			self.hidden_dir += '/'
 
+		self.test_df = self.replace_auc(args.test, args.predicted)
+		#self.test_df = self.replace_auc_root(args.test)
+
 
 	def replace_auc(self, test_file, predict_file):
 		test_df = pd.read_csv(test_file, sep='\t')
@@ -38,6 +41,21 @@ class RLIPPCalculator():
 		drug_list.remove('cell_line')
 		for i,d in enumerate(drug_list):
 			test_df[d] = np.where(test_df[d].notna(), predicted_vals[:,i], np.nan)
+		return test_df
+
+	
+	def replace_auc_root(self, test_file):
+		test_df = pd.read_csv(test_file, sep='\t')
+
+		root_hiddens = self.load_feature('NEST')
+		root_pca = PCA(n_components=1).fit_transform(root_hiddens)
+		root_scaled = MinMaxScaler().fit_transform(root_pca)
+		root_pred = np.array(root_scaled[:, 0])
+
+		drug_list = list(test_df.columns)
+		drug_list.remove('cell_line')
+		for i,d in enumerate(drug_list):
+			test_df[d] = root_pred
 		return test_df
 
 
@@ -109,7 +127,7 @@ class RLIPPCalculator():
 	# Calculates RLIPP for a given term
 	#Executes parallely
 	def calc_term_rlipp(self, term_features, term_child_features, term, drug):
-		pca_dim = np.size(term_features, axis=1)
+		pca_dim = min(np.size(term_features, axis=1), 4)
 		y = np.array(self.test_df[drug])
 		mask = np.isnan(y)
 		y = y[~mask]

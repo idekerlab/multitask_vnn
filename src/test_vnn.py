@@ -75,8 +75,8 @@ def test(predict_data, gene_dim, model_file, hidden_folder, batch_size, result_f
 			with open(hidden_file, 'ab') as f:
 				np.savetxt(f, hidden_grad.data.detach().cpu().numpy(), '%.4e', delimiter='\t')
 
-	test_corr = util.get_pearson_corr(predict_label_gpu, test_predict, CUDA_ID)
-	print("Test correlation", test_corr.detach().cpu().numpy())
+	#test_corr = util.get_pearson_corr(predict_label_gpu, test_predict, CUDA_ID)
+	#print("Test correlation", test_corr.detach().cpu().numpy())
 
 	np.savetxt(result_file + '.txt', test_predict.detach().cpu().numpy(),'%.4f')
 
