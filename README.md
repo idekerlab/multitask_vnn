@@ -113,7 +113,7 @@ to run the training scripts:
     "gene" when the line represents an annotation link between a term and a gene.
     The following is an example describing a sample hierarchy.
 
-        ![](https://github.com/idekerlab/multitask_vnn/samples/ontology_image_sample.png)
+        ![](https://github.com/idekerlab/mutlitask_vnn/blob/main/sample/ontology_image_sample.png)
 
     ```
      GO:0045834	GO:0045923	default
