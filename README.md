@@ -10,7 +10,8 @@ the feature vector for each cell is a binary vector representing
 mutational status and copy number variations of the genes 
 used in clinical panels like Foundation Medicine (n=718).
 
-Related publications: Zhao, Singhal, et al. Cancer Mutations Converge on a Collection of Protein Assemblies to Predict Resistance to Replication Stress. Cancer Discov 1 March 2024; 14 (3): 508–523. https://doi.org/10.1158/2159-8290.CD-23-0641
+Related publication:
+Zhao, Singhal, et al. Cancer Mutations Converge on a Collection of Protein Assemblies to Predict Resistance to Replication Stress. Cancer Discov 1 March 2024; 14 (3): 508–523. https://doi.org/10.1158/2159-8290.CD-23-0641
 
 # Environment set up for training and testing
 The model training/testing scripts require the following environmental setup:
